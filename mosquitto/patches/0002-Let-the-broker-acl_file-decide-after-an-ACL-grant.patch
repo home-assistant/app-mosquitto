@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: cmatte <cmatte@users.noreply.github.com>
+Date: Tue, 27 Oct 2026 21:00:00 +0000
+Subject: [PATCH] Let the broker's acl_file decide after an ACL grant
+
+On Mosquitto 2.1 the ACL check runs through every registered plugin
+callback in order and stops at the first result that is not
+MOSQ_ERR_PLUGIN_DEFER or MOSQ_ERR_PLUGIN_IGNORE. The broker's own
+acl_file check is registered after the plugins, so when go-auth grants
+access with MOSQ_ERR_SUCCESS the acl_file is never consulted.
+
+Return MOSQ_ERR_PLUGIN_IGNORE for a grant instead, so a configured
+acl_file can still restrict access. Without an acl_file every callback
+ignores and the broker allows the request, as before. Denials and
+errors are unchanged, and older Mosquitto versions keep returning
+MOSQ_ERR_SUCCESS.
+---
+ auth-plugin.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/auth-plugin.c b/auth-plugin.c
+index fc45f26..d29f174 100644
+--- a/auth-plugin.c
++++ b/auth-plugin.c
+@@ -133,7 +133,13 @@ int mosquitto_auth_acl_check(void *userdata, const char *clientid, const char *u
+   switch (ret)
+   {
+   case AuthGranted:
++#if defined(LIBMOSQUITTO_VERSION_NUMBER) && LIBMOSQUITTO_VERSION_NUMBER >= 2001000
++    /* Mosquitto 2.1+: a grant does not end the check; later checks
++     * (e.g. the broker's own acl_file) still decide. */
++    return MOSQ_ERR_PLUGIN_IGNORE;
++#else
+     return MOSQ_ERR_SUCCESS;
++#endif
+     break;
+   case AuthRejected:
+     return MOSQ_ERR_ACL_DENIED;
+-- 
+2.53.0
+

@@ -7,6 +7,7 @@ WORKDIR /usr/src
 ARG MOSQUITTO_VERSION=2.1.2
 ARG MOSQUITTO_AUTH_VERSION=3.0.0
 COPY patches/0001-Fix-builtin-websockets-dropping-the-session-on-an-empty-data-frame.patch /usr/src
+COPY patches/0002-Let-the-broker-acl_file-decide-after-an-ACL-grant.patch /usr/src
 RUN apt-get update \
     && apt-get install -qy --no-install-recommends \
         nginx \
@@ -47,6 +48,7 @@ RUN apt-get update \
     && sed -i 's/LDFLAGS := .*$/& -Wl,-unresolved-symbols=ignore-all/' Makefile \
     # Fix nil pointer dereference panic in ttlcache
     && sed -i 's/return present, item.Value()/if item == nil { return false, false }\n\treturn true, item.Value()/' cache/cache.go \
+    && patch -p1 < /usr/src/0002-Let-the-broker-acl_file-decide-after-an-ACL-grant.patch \
     && make \
     && mkdir -p /usr/share/mosquitto \
     && cp -f go-auth.so /usr/share/mosquitto \
