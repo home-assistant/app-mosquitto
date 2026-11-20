@@ -12,27 +12,38 @@ access with MOSQ_ERR_SUCCESS the acl_file is never consulted.
 Return MOSQ_ERR_PLUGIN_IGNORE for a grant instead, so a configured
 acl_file can still restrict access. Without an acl_file every callback
 ignores and the broker allows the request, as before. Denials and
-errors are unchanged, and older Mosquitto versions keep returning
-MOSQ_ERR_SUCCESS.
+errors are unchanged. Building against Mosquitto older than 2.1 (or
+without its version macro) fails with #error instead of silently
+falling back to ending the check on a grant.
 ---
- auth-plugin.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+ auth-plugin.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
 
 diff --git a/auth-plugin.c b/auth-plugin.c
-index fc45f26..d29f174 100644
+index fc45f26..35dfa00 100644
 --- a/auth-plugin.c
 +++ b/auth-plugin.c
-@@ -133,7 +133,13 @@ int mosquitto_auth_acl_check(void *userdata, const char *clientid, const char *u
+@@ -14,6 +14,12 @@
+ 
+ #include "go-auth.h"
+ 
++/* An ACL grant returns MOSQ_ERR_PLUGIN_IGNORE, which needs Mosquitto 2.1+.
++ * Fail the build rather than fall back to ending the check on a grant. */
++#if !defined(LIBMOSQUITTO_VERSION_NUMBER) || LIBMOSQUITTO_VERSION_NUMBER < 2001000
++# error "Returning MOSQ_ERR_PLUGIN_IGNORE needs Mosquitto 2.1 or later"
++#endif
++
+ // Same constant as one in go-auth.go.
+ #define AuthRejected 0
+ #define AuthGranted 1
+@@ -133,7 +139,9 @@ int mosquitto_auth_acl_check(void *userdata, const char *clientid, const char *u
    switch (ret)
    {
    case AuthGranted:
-+#if defined(LIBMOSQUITTO_VERSION_NUMBER) && LIBMOSQUITTO_VERSION_NUMBER >= 2001000
-+    /* Mosquitto 2.1+: a grant does not end the check; later checks
-+     * (e.g. the broker's own acl_file) still decide. */
+-    return MOSQ_ERR_SUCCESS;
++    /* A grant does not end the check; later checks (e.g. the broker's
++     * own acl_file) still decide. */
 +    return MOSQ_ERR_PLUGIN_IGNORE;
-+#else
-     return MOSQ_ERR_SUCCESS;
-+#endif
      break;
    case AuthRejected:
      return MOSQ_ERR_ACL_DENIED;
