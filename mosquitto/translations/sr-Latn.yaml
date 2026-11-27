@@ -1,0 +1,55 @@
+---
+configuration:
+  logins:
+    name: Korisnički nalozi
+    description: >-
+      Lista lokalnih korisnika koji će biti kreirani sa korisničkim imenom i lozinkom.
+      Ovo ne morate da podešavate jer možete koristiti i Home Assistant korisnike
+      bez ikakve dodatne konfiguracije. Takođe možete navesti
+      `password_pre_hashed: true` da biste koristili unapred heširanu lozinku iz
+      izlaza komande `pw` (koja je dostupna unutar kontejnera).
+  log_dest:
+    name: Odredišta evidencije
+    description: >-
+      Opciona lista odredišta za Mosquitto evidenciju. Dozvoljene vrednosti su `none`,
+      `stdout`, `stderr` i `topic`. Ako je prazno, podrazumevano je `stdout`.
+  log_type:
+    name: Tipovi evidencije
+    description: >-
+      Opciona lista tipova Mosquitto evidencije. Ako je prazno, podrazumevano su `error`,
+      `warning`, `notice` i `information`. Zanemaruje se i postavlja na `all`
+      kada je uključena opcija Debug.
+  require_certificate:
+    name: Zahtevaj klijentski sertifikat
+    description: >-
+      Ako je uključeno, klijent će morati da priloži sopstveni sertifikat pored
+      korisničkog imena i lozinke. Opcija 'cafile' mora biti podešena.
+  certfile:
+    name: Datoteka sertifikata
+    description: >-
+      Datoteka koja sadrži sertifikat, uključujući njegov lanac. Postavite ovu datoteku u
+      Home Assistant fasciklu `ssl`.
+  cafile:
+    name: CA datoteka
+    description: >-
+      Datoteka koja sadrži korenski sertifikat kojim je potpisan klijentski sertifikat
+      (koristi se samo ako je uključeno 'require_certificate'). Postavite ovu datoteku u Home
+      Assistant fasciklu `ssl`.
+  keyfile:
+    name: Datoteka privatnog ključa
+    description: >-
+      Datoteka koja sadrži privatni ključ. Postavite ovu datoteku u Home Assistant
+      fasciklu `ssl`.
+  customize:
+    name: Prilagođavanje
+    description: >-
+      Pogledajte karticu Dokumentacija za više informacija o ovim opcijama.
+  debug:
+    name: Otklanjanje grešaka
+    description: >-
+      Ako je uključeno, pokreće evidenciju za otklanjanje grešaka za mosquitto i dodatak za autentifikaciju.
+network:
+  1883/tcp: Običan MQTT
+  1884/tcp: MQTT preko WebSocket-a
+  8883/tcp: Običan MQTT sa SSL-om
+  8884/tcp: MQTT preko WebSocket-a sa SSL-om
